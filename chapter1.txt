@@ -1,53 +1,23 @@
+
 const express = require('express');
-const router = express.Router();
-const Todo = require('../models/todo');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+const db = require('./config/database');
 
-// GET all todos
-router.get('/', async (req, res) => {
-  try {
-    const todos = await Todo.findAll();
-    res.json(todos);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
+const app = express();
 
-// POST new todo
-router.post('/', async (req, res) => {
-  try {
-    const { title } = req.body;
-    const todo = await Todo.create({ title });
-    res.json(todo);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
+// Test db connection
+db.authenticate()
+    .then(() => console.log('MariaDB connected'))
+    .catch(err => console.error(err));
 
-// PUT update todo
-router.put('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { title, completed } = req.body;
-    const todo = await Todo.update({ title, completed }, { where: { id } });
-    res.json(todo);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
+// Middleware
+app.use(bodyParser.json());
+app.use(cors());
 
-// DELETE remove todo
-router.delete('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    await Todo.destroy({ where: { id } });
-    res.json({ msg: 'Todo deleted' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
+// Routes
+app.use('/todos', require('./routes/todos'));
 
-module.exports = router;
+// Start server
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server started on port ${PORT}`))
